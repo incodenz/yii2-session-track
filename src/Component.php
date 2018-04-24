@@ -10,6 +10,7 @@ use yii\db\ActiveQuery;
 use yii\db\ActiveRecord;
 use yii\db\Expression;
 use yii\web\User;
+use yii\helpers\Json;
 
 /**
  * Class SessionTrack
@@ -17,15 +18,27 @@ use yii\web\User;
  */
 class Component extends \yii\base\Component implements \yii\base\BootstrapInterface
 {
+    const TRACK_ALL = 10;
+    const TRACK_PUBLIC_ONLY = 20;
+    const TRACK_USERS_ONLY = 30;
+
+    const EVENT_BEFORE_PAGE_TRACK = 'beforePageTrack';
+
+    public $whoToTrack = self::TRACK_USERS_ONLY;
+    public $trackPages = false;
+
     /**
      * @var string
      */
-    public $trackingClass = 'incodenz\SessionTrack\models\SessionTrack';
+    public $trackingClass = '\incodenz\SessionTrack\models\SessionTrack';
+    public $trackingPageClass = '\incodenz\SessionTrack\models\SessionTrackPage';
     /**
      * @var array
+     * exclude specific paths / pages - can be a regex
      */
     public static $exceptions = [
     ];
+    public static
 
     /**
      * Bootstrap method is executed on every request.
@@ -35,29 +48,31 @@ class Component extends \yii\base\Component implements \yii\base\BootstrapInterf
      */
     public function bootstrap($app)
     {
-        if ($this->isExceptionRoute($this->getRoute())) {
+        if (Yii::$app instanceof \yii\console\Application || $this->isExceptionRoute($this->getRoute())) {
             return;
         }
         $user = Yii::$app->getUser();
-        $user->on(User::EVENT_AFTER_LOGIN, function ($event) {
-            self::updateRecord($this->trackingClass);
-        });
-        $user->on(User::EVENT_BEFORE_LOGOUT, function ($event) {
-            self::updateRecord($this->trackingClass);
-        });
-        if (Yii::$app instanceof \yii\console\Application || $user->isGuest) {
+        if (($this->whoToTrack == self::TRACK_PUBLIC_ONLY && !$user->isGuest) || ($this->whoToTrack == self::TRACK_USERS_ONLY && $user->isGuest)) {
             return;
         }
+        if (in_array($this->whoToTrack, [self::TRACK_USERS_ONLY, self::TRACK_ALL])) {
+            $user->on(User::EVENT_AFTER_LOGIN, function ($event) {
+                $this->updateRecord();
+            });
+            $user->on(User::EVENT_BEFORE_LOGOUT, function ($event) {
+                $this->updateRecord();
+            });
+        }
         $app->on(\yii\web\Application::EVENT_BEFORE_REQUEST, function ($event) {
-            self::updateRecord($this->trackingClass);
+            $this->updateRecord();
         });
     }
 
     /**
-     * @param $trackingClass
+     * update session track record
      */
-    private static function updateRecord($trackingClass) {
-
+    private function updateRecord() {
+        $trackingClass = $this->trackingClass;
         $session = Yii::$app->session;
         /** @var ActiveQuery $query */
         $query = call_user_func($trackingClass.'::find');
@@ -67,6 +82,7 @@ class Component extends \yii\base\Component implements \yii\base\BootstrapInterf
         if ($model) {
             $model->updated_at = new Expression('CURRENT_TIMESTAMP');
             $model->updateAttributes(['updated_at']);
+            $this->trackPage($model);
             return;
         }
         $user = Yii::$app->user;
@@ -78,6 +94,33 @@ class Component extends \yii\base\Component implements \yii\base\BootstrapInterf
         $model->created_at = new Expression('CURRENT_TIMESTAMP');
         $model->updated_at = new Expression('CURRENT_TIMESTAMP');
         $model->save(false);
+        $this->trackPage($model);
+    }
+
+    /**
+     * @param $sessionTrack \incodenz\SessionTrack\models\SessionTrack
+     */
+    private function trackPage($sessionTrack)
+    {
+        if (!$this->trackPages) {
+            return;
+        }
+        $event = new SessionTrackEvent();
+        $this->trigger(self::EVENT_BEFORE_PAGE_TRACK, $event);
+        if (!$event->isValid) {
+            return;
+        }
+        /** @var $request yii\web\Request */
+        $request = Yii::$app->request;
+        $trackingPageClass = $this->trackingPageClass;
+        /** @var $model \incodenz\SessionTrack\models\SessionTrack */
+        $model = new $trackingPageClass();
+        $model->session_track_id = $sessionTrack->id;
+        $model->created_at = new Expression('CURRENT_TIMESTAMP');
+        $model->request_type = $request->method;
+        $model->request_path = $request->url;
+        $model->request_params = Json::encode($request->post());
+        $model->save();
     }
 
     /**
