@@ -38,7 +38,6 @@ class Component extends \yii\base\Component implements \yii\base\BootstrapInterf
      */
     public static $exceptions = [
     ];
-    public static
 
     /**
      * Bootstrap method is executed on every request.
