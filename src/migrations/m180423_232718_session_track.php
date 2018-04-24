@@ -26,6 +26,11 @@ class m180423_232718_session_track extends Migration
             'session_track',
             'session_id'
         );
+        $this->createIndex(
+            'idx_userid',
+            'session_track',
+            'user_id'
+        );
     }
 
     public function down()

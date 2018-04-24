@@ -74,7 +74,7 @@ class Component extends \yii\base\Component implements \yii\base\BootstrapInterf
         $model = new $trackingClass();
         $model->session_id = $session->id;
         $model->user_id = $user->id;
-        $model->ip_address = Yii::$app->getRequest()->getUserIP();
+        $model->ip_address = self::getIPAddress();
         $model->created_at = new Expression('CURRENT_TIMESTAMP');
         $model->updated_at = new Expression('CURRENT_TIMESTAMP');
         $model->save(false);
@@ -120,6 +120,18 @@ class Component extends \yii\base\Component implements \yii\base\BootstrapInterf
     public function setExceptions($value)
     {
         self::$exceptions = $value;
+    }
+
+    private static function getIPAddress()
+    {
+        $ip = Yii::$app->request->getUserIP();
+        if (isset($_SERVER['HTTP_X_FORWARDED_FOR']) && $_SERVER['HTTP_X_FORWARDED_FOR']) {
+            $realIp = $_SERVER['HTTP_X_FORWARDED_FOR'];
+            if (filter_var($realIp, FILTER_VALIDATE_IP)) {
+                $ip = $realIp;
+            }
+        }
+        return $ip;
     }
 }
 
