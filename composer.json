@@ -1,0 +1,27 @@
+{
+  "name": "incodenz/yii2-session-track",
+  "description": "Simple component that allows for tracking of sessions / logins.",
+  "keywords": ["yii2", "component", "session-track"],
+  "type": "yii2-extension",
+  "license": "proprietary",
+  "homepage": "https://github.com/incodenz/yii2-session-track",
+  "authors": [
+    {
+      "name": "Webtools Ltd",
+      "email": "support@webtools.co.nz",
+      "homepage": "http://www.webtools.co.nz",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "yiisoft/yii2": "~2.0.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "~4.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "incodenz\\SessionTrack\\": "src"
+    }
+  }
+}
