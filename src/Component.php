@@ -37,6 +37,8 @@ class Component extends \yii\base\Component implements \yii\base\BootstrapInterf
      * exclude specific paths / pages - can be a regex
      */
     public static $exceptions = [
+        '/^debug',
+        '/^assets',
     ];
 
     /**
@@ -119,6 +121,7 @@ class Component extends \yii\base\Component implements \yii\base\BootstrapInterf
         $model->request_type = $request->method;
         $model->request_path = $request->url;
         $model->request_params = Json::encode($request->post());
+        $model->request_params = $model->request_params === '[]' ? '' : $model->request_params;
         $model->save();
     }
 
