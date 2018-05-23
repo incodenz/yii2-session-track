@@ -122,7 +122,21 @@ class Component extends \yii\base\Component implements \yii\base\BootstrapInterf
         $model->request_path = $request->url;
         $model->request_params = Json::encode($request->post());
         $model->request_params = $model->request_params === '[]' ? '' : $model->request_params;
-        $model->save();
+        try {
+            $model->save();
+        } catch (\yii\db\Exception $dbException) {
+            if (strpos($dbException->getMessage(), 'Incorrect string value') !== false) {
+                // an db encoding/charset issue -- retry
+                try {
+                    $model->request_params = Json::encode($request->post(), JSON_UNESCAPED_SLASHES);
+                    $model->save();
+                } catch (\Exception $e) {
+                    // give up
+                }
+            }
+        } catch (\Exception $e) {
+            // give up
+        }
     }
 
     /**
