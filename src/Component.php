@@ -37,8 +37,8 @@ class Component extends \yii\base\Component implements \yii\base\BootstrapInterf
      * exclude specific paths / pages - can be a regex
      */
     public static $exceptions = [
-        '/^debug',
-        '/^assets',
+        '/^debug/',
+        '/^assets/',
     ];
 
     /**
