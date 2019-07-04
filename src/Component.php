@@ -129,7 +129,7 @@ class Component extends \yii\base\Component implements \yii\base\BootstrapInterf
 
         try {
             $model->save();
-            \Yii::$app->on(\yii\web\Application::EVENT_AFTER_ACTION, function ($event) use ($model) {
+            \Yii::$app->on(\yii\web\Application::EVENT_AFTER_REQUEST, function ($event) use ($model) {
                 $now = new \DateTime();
                 $diff = $now->diff($this->startTime);
                 $model->request_time = sprintf('%0.3f', $diff->f);
