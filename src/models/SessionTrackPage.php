@@ -15,6 +15,7 @@ use yii\db\ActiveRecord;
  * @property string $request_type
  * @property string $request_path
  * @property string $request_params
+ * @property string $request_time
  */
 class SessionTrackPage extends ActiveRecord
 {
@@ -51,7 +52,7 @@ class SessionTrackPage extends ActiveRecord
             [['created_at'], 'safe'],
             [['request_params'], 'string'],
             [['request_path'], 'string', 'max' => 255],
-            [['request_type'], 'string', 'max' => 6],
+            [['request_type', 'request_time'], 'string', 'max' => 6],
             [['session_track_id'], 'integer']
         ];
     }
@@ -68,6 +69,7 @@ class SessionTrackPage extends ActiveRecord
             'request_type' => 'Request Type',
             'request_path' => 'Request Path',
             'request_params' => 'Request Params',
+            'request_time' => 'Request Time',
         ];
     }
 
@@ -95,7 +97,8 @@ class SessionTrackPage extends ActiveRecord
         $query->andFilterWhere(['like', 'session_track_page.created_at', $this->created_at])
             ->andFilterWhere(['like', 'session_track_page.request_type', $this->request_type])
             ->andFilterWhere(['like', 'session_track_page.request_path', $this->request_path])
-            ->andFilterWhere(['like', 'session_track_page.request_params', $this->request_params]);
+            ->andFilterWhere(['like', 'session_track_page.request_params', $this->request_params])
+            ->andFilterWhere(['like', 'session_track_page.request_time', $this->request_time]);
 
         return new ActiveDataProvider([
             'query' => $query,

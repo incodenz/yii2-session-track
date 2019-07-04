@@ -27,6 +27,8 @@ class Component extends \yii\base\Component implements \yii\base\BootstrapInterf
     public $whoToTrack = self::TRACK_USERS_ONLY;
     public $trackPages = false;
 
+    public $startTime;
+
     /**
      * @var string
      */
@@ -52,6 +54,7 @@ class Component extends \yii\base\Component implements \yii\base\BootstrapInterf
         if (Yii::$app instanceof \yii\console\Application || $this->isExceptionRoute($this->getRoute())) {
             return;
         }
+        $this->startTime = new \DateTime();
         $user = Yii::$app->getUser();
         if (($this->whoToTrack == self::TRACK_PUBLIC_ONLY && !$user->isGuest) || ($this->whoToTrack == self::TRACK_USERS_ONLY && $user->isGuest)) {
             return;
@@ -122,8 +125,16 @@ class Component extends \yii\base\Component implements \yii\base\BootstrapInterf
         $model->request_path = $request->url;
         $model->request_params = Json::encode($request->post());
         $model->request_params = $model->request_params === '[]' ? '' : $model->request_params;
+
+
         try {
             $model->save();
+            \Yii::$app->on(\yii\web\Application::EVENT_AFTER_ACTION, function ($event) use ($model) {
+                $now = new \DateTime();
+                $diff = $now->diff($this->startTime);
+                $model->request_time = sprintf('%0.3f', $diff->f);
+                $model->updateAttributes(['request_time']);
+            });
         } catch (\yii\db\Exception $dbException) {
             if (strpos($dbException->getMessage(), 'Incorrect string value') !== false) {
                 // an db encoding/charset issue -- retry
